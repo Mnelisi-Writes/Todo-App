@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo app</title>
+    <script src="https://kit.fontawesome.com/48791bd008.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Todo App</h1><br>
+
+        <div class="stats-container">
+
+            <div class="details">
+                <p>Plan your tasks!</p>
+                <div id="progressBar">
+                    <div id="progress"></div>
+                </div>
+            
+            </div>
+            <div class="stats-numbers">
+                <p id="numbers"> 0 / 0</p>
+
+            </div>
+
+        </div>
+        <form id="taskForm">
+            <input type="text" id="taskInput" placeholder="Write your Task" required>
+            <button id="newTask" type ="submit" > Add </button>
+        </form>
+        <ul id="task-list"></ul>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
