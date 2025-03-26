@@ -1,81 +1,153 @@
-import { db, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "./firebaseConfig.js";
+// Import Firebase modules (add this to your HTML or module setup)
+// Make sure to include these scripts in your HTML:
+// <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+// <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
-let tasks = [];
-
-const addTask = async () => {
+// Your Firebase configuration (replace with your actual config)
+const firebaseConfig = {
+    apiKey: "AIzaSyDaONss8a3-oO_TNQX-5YPzD12E4d1bWlI",
+    authDomain: "mnelisi-todolist.firebaseapp.com",
+    projectId: "mnelisi-todolist",
+    storageBucket: "mnelisi-todolist.firebasestorage.app",
+    messagingSenderId: "334133636005",
+    appId: "1:334133636005:web:a5726c606d94c6f528164c"
+  };
+  
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  
+  let tasks = [];
+  
+  // Function to fetch tasks from Firestore
+  const fetchTasks = async () => {
+    try {
+      const snapshot = await db.collection("tasks").get();
+      tasks = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      updateTasksList();
+      updateStats();
+    } catch (error) {
+      console.error("Error fetching tasks: ", error);
+    }
+  };
+  
+  // Function to add a task to Firestore
+  const addTask = async () => {
     const taskInput = document.getElementById("taskInput");
     const text = taskInput.value.trim();
-
+  
     if (text) {
-        try {
-            const taskRef = await addDoc(collection(db, "tasks"), {
-                text: text,
-                completed: false,
-            });
-
-            tasks.push({ id: taskRef.id, text: text, completed: false });
-
-            updateTasksList();
-            taskInput.value = ""; // Clear input after adding task
-            updateStats();
-        } catch (error) {
-            console.error("Error adding task:", error);
-        }
-    }
-};
-const toggleTaskComplete = async (index) => {
-    const task = tasks[index];
-    task.completed = !task.completed;
-
-    try {
-        await updateDoc(doc(db, "tasks", task.id), { completed: task.completed });
+      try {
+        const docRef = await db.collection("tasks").add({
+          text: text,
+          completed: false,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Add to local array with the generated ID
+        tasks.push({ 
+          id: docRef.id, 
+          text: text, 
+          completed: false 
+        });
+        
         updateTasksList();
+        taskInput.value = "";
         updateStats();
-    } catch (error) {
-        console.error("Error updating task:", error);
+      } catch (error) {
+        console.error("Error adding task: ", error);
+      }
     }
-};
-const deleteTask = async (index) => {
+  };
+  
+  // Function to toggle task completion status
+  const toggleTaskComplete = async (index) => {
     const task = tasks[index];
-
     try {
-        await deleteDoc(doc(db, "tasks", task.id));
-        tasks.splice(index, 1);
-        updateTasksList();
-        updateStats();
+      await db.collection("tasks").doc(task.id).update({
+        completed: !task.completed
+      });
+      tasks[index].completed = !task.completed;
+      updateTasksList();
+      updateStats();
     } catch (error) {
-        console.error("Error deleting task:", error);
+      console.error("Error updating task: ", error);
     }
-};
-const editTask = async (index) => {
-    const newText = prompt("Edit task:", tasks[index].text);
+  };
+  
+  // Function to delete a task
+  const deleteTask = async (index) => {
+    const task = tasks[index];
+    try {
+      await db.collection("tasks").doc(task.id).delete();
+      tasks.splice(index, 1);
+      updateTasksList();
+      updateStats();
+    } catch (error) {
+      console.error("Error deleting task: ", error);
+    }
+  };
+  
+  // Function to edit a task
+  const editTask = async (index) => {
+    const task = tasks[index];
+    const newText = prompt("Edit task:", task.text);
     
     if (newText !== null && newText.trim() !== "") {
-        const task = tasks[index];
-        task.text = newText.trim();
-
-        try {
-            await updateDoc(doc(db, "tasks", task.id), { text: task.text });
-            updateTasksList(); // Re-render task list
-        } catch (error) {
-            console.error("Error updating task text:", error);
-        }
-    }
-};const loadTasks = async () => {
-    try {
-        const querySnapshot = await getDocs(collection(db, "tasks"));
-        tasks = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-        }));
-
+      try {
+        await db.collection("tasks").doc(task.id).update({
+          text: newText.trim()
+        });
+        tasks[index].text = newText.trim();
         updateTasksList();
-        updateStats();
-    } catch (error) {
-        console.error("Error loading tasks:", error);
+      } catch (error) {
+        console.error("Error updating task: ", error);
+      }
     }
-};
-
-// Load tasks when the page loads
-window.onload = loadTasks;
-
+  };
+  
+  // Your existing updateStats and updateTasksList functions remain the same
+  const updateStats = () => {
+    const completedTasks = tasks.filter((task) => task.completed).length;
+    const totalTasks = tasks.length;
+    const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+    const progressBar = document.getElementById('progress');
+  
+    progressBar.style.width = `${progress}%`;
+    document.getElementById('numbers').innerText = `${completedTasks} / ${totalTasks}`;
+  };
+  
+  const updateTasksList = () => {
+    const taskList = document.getElementById("task-list");
+    taskList.innerHTML = "";
+  
+    tasks.forEach((task, index) => {
+      const listItem = document.createElement("li");
+      listItem.innerHTML = `
+        <div class="taskItem">
+          <div class="task ${task.completed ? "completed" : ""}">
+            <input type="checkbox" class="checkbox" 
+            ${task.completed ? "checked" : ""}
+            onchange="toggleTaskComplete(${index})"/>
+            <p>${task.text}</p>
+          </div>
+          <div class="icons">
+            <i class="fa-solid fa-pen-to-square" onClick="editTask(${index})"></i>
+            <i class="fa-solid fa-trash" style="color:red" onClick="deleteTask(${index})"></i>
+          </div>
+        </div>     
+      `;
+      taskList.append(listItem);
+    });
+  };
+  
+  // Initialize the app by fetching tasks when the page loads
+  document.addEventListener("DOMContentLoaded", fetchTasks);
+  
+  document.getElementById("newTask").addEventListener("click", function (e) {
+    e.preventDefault();
+    addTask();
+  });
