@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Mnelisi-Writes/Todo-App/issues"
   },
-  "homepage": "https://github.com/Mnelisi-Writes/Todo-App#readme"
+  "homepage": "https://github.com/Mnelisi-Writes/Todo-App#readme",
+  "dependencies": {
+    "firebase-admin": "^13.2.0"
+  }
 }

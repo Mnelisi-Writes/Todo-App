@@ -1,76 +1,81 @@
+import { db, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "./firebaseConfig.js";
+
 let tasks = [];
 
-const addTask = () => {
+const addTask = async () => {
     const taskInput = document.getElementById("taskInput");
     const text = taskInput.value.trim();
 
     if (text) {
-        tasks.push({ text: text, completed: false });
+        try {
+            const taskRef = await addDoc(collection(db, "tasks"), {
+                text: text,
+                completed: false,
+            });
+
+            tasks.push({ id: taskRef.id, text: text, completed: false });
+
+            updateTasksList();
+            taskInput.value = ""; // Clear input after adding task
+            updateStats();
+        } catch (error) {
+            console.error("Error adding task:", error);
+        }
+    }
+};
+const toggleTaskComplete = async (index) => {
+    const task = tasks[index];
+    task.completed = !task.completed;
+
+    try {
+        await updateDoc(doc(db, "tasks", task.id), { completed: task.completed });
+        updateTasksList();
+        updateStats();
+    } catch (error) {
+        console.error("Error updating task:", error);
+    }
+};
+const deleteTask = async (index) => {
+    const task = tasks[index];
+
+    try {
+        await deleteDoc(doc(db, "tasks", task.id));
+        tasks.splice(index, 1);
+        updateTasksList();
+        updateStats();
+    } catch (error) {
+        console.error("Error deleting task:", error);
+    }
+};
+const editTask = async (index) => {
+    const newText = prompt("Edit task:", tasks[index].text);
+    
+    if (newText !== null && newText.trim() !== "") {
+        const task = tasks[index];
+        task.text = newText.trim();
+
+        try {
+            await updateDoc(doc(db, "tasks", task.id), { text: task.text });
+            updateTasksList(); // Re-render task list
+        } catch (error) {
+            console.error("Error updating task text:", error);
+        }
+    }
+};const loadTasks = async () => {
+    try {
+        const querySnapshot = await getDocs(collection(db, "tasks"));
+        tasks = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
 
         updateTasksList();
-        taskInput.value = ""; // Clear input after adding task
         updateStats();
-    }
-    
-};
-const toggleTaskComplete = (index) => {
-    tasks[index].completed = !tasks[index].completed;
-    updateTasksList();
-    updateStats();
-}
-const deleteTask = (index) =>{
-    tasks.splice(index, 1);
-    updateTasksList();
-    updateStats();
-};
-const editTask = (index) =>{
-    const newText = prompt("Edit task:", tasks[index].text);
-    if (newText !== null && newText.trim() !== "") {
-      tasks[index].text = newText.trim();
-      updateTasksList(); // Re-render task list
+    } catch (error) {
+        console.error("Error loading tasks:", error);
     }
 };
 
-const updateStats = () =>{
-    const completedTasks = tasks.filter((task) => task.completed).length;
-    const totalTasks = tasks.length;
-    const progress = (completedTasks / totalTasks) *100;
-    const progressBar = document.getElementById('progress');
+// Load tasks when the page loads
+window.onload = loadTasks;
 
-    progressBar.style.width = `${progress}%`;
-
-    document.getElementById('numbers').innerText = `${completedTasks} / ${totalTasks}`
-}
-
-const updateTasksList = () => {
-    const taskList = document.getElementById("task-list");
-    taskList.innerHTML = "";
-
-    tasks.forEach((task, index) => {
-        const listItem = document.createElement("li");
-
-        listItem.innerHTML = `
-        <div class="taskItem">
-             <div class="task ${task.completed ? "completed" : ""}">
-               <input type="checkbox" class="checkbox" 
-               ${task.completed ? "checked" : ""}
-               onchange="toggleTaskComplete(${index})"/>
-               <p>${task.text}</p>
-             </div>
-             <div class="icons">
-               <i class="fa-solid fa-pen-to-square" onClick="editTask(${index})"></i>
-               <i class="fa-solid fa-trash" style="color:red" onClick="deleteTask(${index})"></i>
-             </div>
-        </div>     
-        `;
-
-        taskList.append(listItem);
-    });
-};
-
-
-
-document.getElementById("newTask").addEventListener("click", function (e) {
-    e.preventDefault();
-    addTask();
-});
