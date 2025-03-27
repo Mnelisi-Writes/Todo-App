@@ -3,7 +3,7 @@
 // <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
 // <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
-// Your Firebase configuration (replace with your actual config)
+
 const firebaseConfig = {
     apiKey: "AIzaSyDaONss8a3-oO_TNQX-5YPzD12E4d1bWlI",
     authDomain: "mnelisi-todolist.firebaseapp.com",
