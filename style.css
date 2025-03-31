@@ -160,5 +160,16 @@ button{
     cursor: pointer;
     color: #828dff;
 
+
+}
+.due-date {
+    color: #666;
+    font-size: 0.8em;
+    margin-top: 0.2em;
+}
+
+.task-content {
+    display: flex;
+    flex-direction: column;
 }
 
